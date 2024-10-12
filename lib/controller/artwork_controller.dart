@@ -1,80 +1,73 @@
-import 'dart:io';
-import 'dart:html';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:artworks_images/model/artwork_model.dart';
 import 'package:artworks_images/model/pagination_model.dart';
-import 'package:path_provider/path_provider.dart';
+import 'dart:html' as html;
 
 class ArtworkController extends GetxController {
-  var artworksList = <Artwork>[].obs; // Use the Artwork model list
+  var artworksList = <Artwork>[].obs;
+  var filteredArtworksList = <Artwork>[].obs;
   var isLoading = false.obs;
   var isFetchingMore = false.obs;
   var searchQuery = "".obs;
-  var pagination = Rx<Pagination?>(null); // Store pagination details
+  var pagination = Rx<Pagination?>(null);
   RxBool isHovered = false.obs;
+  var searchController = TextEditingController();
+  Timer? _debounce;
 
   @override
   void onInit() {
     super.onInit();
-    fetchArtworks(); // Fetch initial data
+    fetchArtworks();
   }
 
-  /// Fetch artworks dynamically with optional parameters
-  Future<void> fetchArtworks(
-      {String query = "", int limit = 40, int page = 1}) async {
+  Future<void> fetchArtworks({String query = "", int limit = 50, int page = 1}) async {
     isLoading.value = true;
     try {
-      // Use limit and page parameters for pagination
-      String url =
-          'https://api.artic.edu/api/v1/artworks?page=$page&limit=$limit';
+      String url = 'https://api.artic.edu/api/v1/artworks?page=$page&limit=$limit';
       if (query.isNotEmpty) {
-        url =
-            'https://api.artic.edu/api/v1/artworks/search?q=$query&page=$page&limit=$limit';
+        url = 'https://api.artic.edu/api/v1/artworks/search?q=$query&page=$page&limit=$limit';
       }
+
+      print("Fetching data from: $url"); // Debug print
 
       var response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
         var data = json.decode(response.body);
-
-        // Parse pagination data and update the controller
         pagination.value = Pagination.fromJson(data['pagination']);
-
-        // Parse artwork data
         var artworksJson = data['data'];
-        var newArtworks = artworksJson
-            .map<Artwork>((json) => Artwork.fromJson(json))
-            .toList();
+        var newArtworks = artworksJson.map<Artwork>((json) => Artwork.fromJson(json)).toList();
 
-        // Add new artworks to the list
         if (page == 1) {
-          artworksList.value = newArtworks; // Clear and set for the first page
+          artworksList.value = newArtworks;
         } else {
-          artworksList.addAll(newArtworks); // Append for subsequent pages
+          artworksList.addAll(newArtworks);
         }
+        print("Fetched ${newArtworks.length} artworks. Total: ${artworksList.length}"); // Debug print
+        _updateFilteredList();
       } else {
+        print("Failed to load artworks. Status code: ${response.statusCode}"); // Debug print
         throw Exception('Failed to load artworks');
       }
     } catch (e) {
-      print("Error: $e");
+      print("Error fetching artworks: $e"); // Debug print
     } finally {
       isLoading.value = false;
     }
   }
 
-  /// Fetch more items when user scrolls to the bottom
   Future<void> fetchMoreArtworks() async {
     if (!isFetchingMore.value && pagination.value != null) {
       if (pagination.value!.currentPage < pagination.value!.totalPages) {
         isFetchingMore.value = true;
         try {
-          // Increment the page and fetch the next set of results
           int nextPage = pagination.value!.currentPage + 1;
           await fetchArtworks(query: searchQuery.value, page: nextPage);
         } catch (e) {
-          print("Error: $e");
+          print("Error fetching more artworks: $e"); // Debug print
         } finally {
           isFetchingMore.value = false;
         }
@@ -82,55 +75,54 @@ class ArtworkController extends GetxController {
     }
   }
 
-  /// Reset and refresh the artworks list
   void resetArtworks() {
-    artworksList.clear(); // Clear the list
-    fetchArtworks(
-        query: searchQuery.value, page: 1); // Fetch fresh results from page 1
+    artworksList.clear();
+    filteredArtworksList.clear();
+    pagination.value = null;
+    fetchArtworks(query: searchQuery.value, page: 1);
   }
 
-  /// Update the search query dynamically and refetch
   void updateSearchQuery(String query) {
-    searchQuery.value = query;
-    resetArtworks(); // Clear and fetch new results based on the updated query
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      searchQuery.value = query;
+      if (query.isEmpty) {
+        _updateFilteredList();
+      } else {
+        fetchArtworks(query: query, page: 1);
+      }
+    });
   }
 
-//   Future<void> downloadArtwork(String url) async {
-//   try {
-//     // Get the directory to save the file
-//     Directory? appDocDir = await get;
-//     String fileName = url.split('/').last; // Get the file name from the URL
-//     String savePath = '${appDocDir?.path}/$fileName';
+  void _updateFilteredList() {
+    if (searchQuery.value.isEmpty) {
+      filteredArtworksList.assignAll(artworksList);
+    } else {
+      filteredArtworksList.assignAll(artworksList.where((artwork) =>
+          artwork.title.toLowerCase().contains(searchQuery.value.toLowerCase())));
+    }
+    print("Filtered list updated. Count: ${filteredArtworksList.length}"); // Debug print
+  }
 
-//     // Send a GET request to the URL
-//     var response = await http.get(Uri.parse(url));
+  @override
+  void onClose() {
+    _debounce?.cancel();
+    super.onClose();
+  }
 
-//     // Check if the request was successful
-//     if (response.statusCode == 200) {
-//       // Write the response body to a file
-//       File file = File(savePath);
-//       await file.writeAsBytes(response.bodyBytes);
+  void downloadImageWeb(String url, String name) async {
+    var res = await http.get(Uri.parse(url));
+    if (res.statusCode == 200) {
+      final blob = html.Blob([res.bodyBytes]);
+      final url = html.Url.createObjectUrlFromBlob(blob);
 
-//       // Show success message
-//       print("Downloaded: $fileName to $savePath");
+      final anchor = html.AnchorElement(href: url)
+        ..setAttribute("download", "$name.jpg")
+        ..click();
 
-//     } else {
-//       throw Exception('Failed to download file');
-//     }
-//   } catch (e) {
-//     // Handle error
-//     print("Download failed: $e");
-//     Get.snackbar("Download Failed", "Could not download the artwork.",
-//       snackPosition: SnackPosition.BOTTOM,
-//       backgroundColor: Colors.red,
-//       colorText: Colors.white,
-//     );
-//   }
-// }
-
-  void downloadFile(String url, String name) {
-    AnchorElement anchorElement = AnchorElement(href: url);
-    anchorElement.download = name;
-    anchorElement.click();
+      html.Url.revokeObjectUrl(url);
+    } else {
+      print("Download failed, status code: ${res.statusCode}");
+    }
   }
 }

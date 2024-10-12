@@ -1,5 +1,4 @@
 import 'package:artworks_images/app_routes.dart';
-import 'package:artworks_images/view/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
