@@ -24,12 +24,15 @@ class ArtworkController extends GetxController {
     fetchArtworks();
   }
 
-  Future<void> fetchArtworks({String query = "", int limit = 50, int page = 1}) async {
+  Future<void> fetchArtworks(
+      {String query = "", int limit = 50, int page = 1}) async {
     isLoading.value = true;
     try {
-      String url = 'https://api.artic.edu/api/v1/artworks?page=$page&limit=$limit';
+      String url =
+          'https://api.artic.edu/api/v1/artworks?page=$page&limit=$limit';
       if (query.isNotEmpty) {
-        url = 'https://api.artic.edu/api/v1/artworks/search?q=$query&page=$page&limit=$limit';
+        url =
+            'https://api.artic.edu/api/v1/artworks/search?q=$query&page=$page&limit=$limit';
       }
 
       print("Fetching data from: $url"); // Debug print
@@ -39,17 +42,21 @@ class ArtworkController extends GetxController {
         var data = json.decode(response.body);
         pagination.value = Pagination.fromJson(data['pagination']);
         var artworksJson = data['data'];
-        var newArtworks = artworksJson.map<Artwork>((json) => Artwork.fromJson(json)).toList();
+        var newArtworks = artworksJson
+            .map<Artwork>((json) => Artwork.fromJson(json))
+            .toList();
 
         if (page == 1) {
           artworksList.value = newArtworks;
         } else {
           artworksList.addAll(newArtworks);
         }
-        print("Fetched ${newArtworks.length} artworks. Total: ${artworksList.length}"); // Debug print
+        print(
+            "Fetched ${newArtworks.length} artworks. Total: ${artworksList.length}"); // Debug print
         _updateFilteredList();
       } else {
-        print("Failed to load artworks. Status code: ${response.statusCode}"); // Debug print
+        print(
+            "Failed to load artworks. Status code: ${response.statusCode}"); // Debug print
         throw Exception('Failed to load artworks');
       }
     } catch (e) {
@@ -84,12 +91,12 @@ class ArtworkController extends GetxController {
 
   void updateSearchQuery(String query) {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
-    _debounce = Timer(const Duration(milliseconds: 500), () {
+    _debounce = Timer(const Duration(milliseconds: 300), () {
       searchQuery.value = query;
       if (query.isEmpty) {
         _updateFilteredList();
       } else {
-        fetchArtworks(query: query, page: 1);
+        fetchArtworks(query: "", page: 1);
       }
     });
   }
@@ -98,10 +105,13 @@ class ArtworkController extends GetxController {
     if (searchQuery.value.isEmpty) {
       filteredArtworksList.assignAll(artworksList);
     } else {
-      filteredArtworksList.assignAll(artworksList.where((artwork) =>
-          artwork.title.toLowerCase().contains(searchQuery.value.toLowerCase())));
+      filteredArtworksList.assignAll(artworksList.where((artwork) => artwork
+          .title
+          .toLowerCase()
+          .contains(searchQuery.value.toLowerCase())));
     }
-    print("Filtered list updated. Count: ${filteredArtworksList.length}"); // Debug print
+    print(
+        "Filtered list updated. Count: ${filteredArtworksList.length}"); // Debug print
   }
 
   @override

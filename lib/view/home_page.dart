@@ -15,7 +15,7 @@ class HomePage extends GetResponsiveView<ArtworkController> {
       if (!controller.isFetchingMore.value &&
           scrollController.position.atEdge &&
           scrollController.position.pixels != 0) {
-        Future.delayed(const Duration(milliseconds: 400), () {
+        Future.delayed(const Duration(milliseconds: 300), () {
           controller.fetchMoreArtworks();
         });
       }
@@ -26,10 +26,10 @@ class HomePage extends GetResponsiveView<ArtworkController> {
   Widget desktop() {
     return Scaffold(
       backgroundColor: const Color.fromRGBO(237, 233, 230, 0.9),
-      body: Stack(
+      body: Obx(
+            () => Stack(
         children: [
-          Obx(
-            () => controller.isLoading.value && controller.filteredArtworksList.isEmpty
+          controller.isLoading.value && controller.filteredArtworksList.isEmpty
                 ? Center(child: Image.asset("assets/loading.gif"))
                 : controller.filteredArtworksList.isEmpty
                     ? const Center(child: Text("No artworks found"))
@@ -45,7 +45,7 @@ class HomePage extends GetResponsiveView<ArtworkController> {
                           ),
                         ),
                       ),
-          ),
+          
           Align(
             alignment: Alignment.topCenter,
             child: SizedBox(
@@ -58,13 +58,14 @@ class HomePage extends GetResponsiveView<ArtworkController> {
                     fillColor: Colors.white,
                     filled: true,
                     hintText: 'Search Artworks',
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.search),
-                      onPressed: () {
-                        controller.updateSearchQuery(
-                            controller.searchController.text.trim());
-                      },
-                    ),
+                    
+                    suffixIcon:  const Icon(Icons.search),
+                      
+                      // onPressed: () {
+                      //   controller.updateSearchQuery(
+                      //       controller.searchController.text.trim());
+                      // },
+                    
                     border: OutlineInputBorder(
                       borderSide: BorderSide.none,
                       borderRadius: BorderRadius.circular(24.0),
@@ -86,6 +87,7 @@ class HomePage extends GetResponsiveView<ArtworkController> {
               ),
             )
         ],
+      ),
       ),
     );
   }
