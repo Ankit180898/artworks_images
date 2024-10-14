@@ -6,6 +6,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:get/get.dart';
+import 'package:lottie/lottie.dart';
 
 class HomePage extends GetResponsiveView<ArtworkController> {
   HomePage({super.key}) {
@@ -34,15 +35,10 @@ class HomePage extends GetResponsiveView<ArtworkController> {
       body: Obx(() => _buildBody()),
     );
   }
+ 
 
-   Widget mobile() {
-    return Scaffold(
-      backgroundColor: const Color.fromRGBO(237, 233, 230, 0.9),
-      body: Obx(() => _buildBody()),
-    );
-  }
-
-     Widget tablet() {
+     @override
+       Widget tablet() {
     return Scaffold(
       backgroundColor: const Color.fromRGBO(237, 233, 230, 0.9),
       body: Obx(() => _buildBody()),
@@ -63,15 +59,18 @@ class HomePage extends GetResponsiveView<ArtworkController> {
 
   Widget _buildMainContent() {
     if (controller.isLoading.value && controller.filteredArtworksList.isEmpty) {
-      return Center(child: Image.asset("assets/loading.gif"));
+      return Center(child: LottieBuilder.asset("assets/loading_animation.json"));
     } else if (controller.filteredArtworksList.isEmpty) {
       return const Center(child: Text("No artworks found"));
     } else {
       return InteractiveViewer(
         constrained: false,
-        maxScale: 1,
-        minScale: 1,
+        maxScale: 2.0,
+        minScale: 0.5,
+        boundaryMargin: EdgeInsets.zero,
+        transformationController: TransformationController(),
         child: SingleChildScrollView(
+          physics: const ClampingScrollPhysics(),
           child: SizedBox(
             width: MediaQuery.of(Get.context!).size.width * 2.5,
             height: MediaQuery.of(Get.context!).size.height,
@@ -102,7 +101,7 @@ class HomePage extends GetResponsiveView<ArtworkController> {
         ),
         child: TextField(
           decoration: InputDecoration(
-            
+
             fillColor: Colors.white,
             filled: true,
             contentPadding: const EdgeInsets.symmetric(horizontal: 16),
@@ -123,11 +122,11 @@ class HomePage extends GetResponsiveView<ArtworkController> {
   }
 
   Widget _buildLoadingIndicator() {
-    return const Align(
+    return  Align(
       alignment: Alignment.bottomCenter,
       child: Padding(
-        padding: EdgeInsets.all(8.0),
-        child: CircularProgressIndicator(),
+        padding: const EdgeInsets.all(8.0),
+        child: LottieBuilder.asset("assets/loading_animation.json",width: 50,height: 50,),
       ),
     );
   }
@@ -193,6 +192,7 @@ class HomePage extends GetResponsiveView<ArtworkController> {
                 right: 10,
                 bottom: 10,
                 child: IconButton.filledTonal(
+                  color: Colors.white,
                   style: IconButton.styleFrom(
                     backgroundColor: Colors.grey,
                   ),
@@ -219,14 +219,16 @@ class HomePage extends GetResponsiveView<ArtworkController> {
         return Dialog(
           backgroundColor: Colors.transparent,
           child: Stack(
+          clipBehavior: Clip.antiAlias,
             children: [
               Container(
                 width: MediaQuery.of(context).size.width * 0.70,
                 height: MediaQuery.of(context).size.width * 0.35,
                 padding: const EdgeInsets.all(16.0),
+                margin: const EdgeInsets.all(32.0),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(26),
+                  borderRadius: BorderRadius.circular(24),
                   border: Border.all(
                     color: Colors.white.withOpacity(0.2),
                     width: 1.5,
@@ -265,7 +267,7 @@ class HomePage extends GetResponsiveView<ArtworkController> {
         Hero(
           tag: 'artwork-${artwork.id}',
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(18.0),
+            borderRadius: BorderRadius.circular(16.0),
             child: Image.network(
               imageUrl,
               height: double.infinity,
@@ -305,17 +307,17 @@ class HomePage extends GetResponsiveView<ArtworkController> {
         ),
         const SizedBox(height: 8),
         Text(
-          "Artist: ${artwork.artistDisplay ?? "Unknown"}",
+          "Artist: ${artwork.artistDisplay}",
           style: const TextStyle(fontSize: 18),
         ),
         const SizedBox(height: 8),
         Text(
-          "Date: ${artwork.dateDisplay ?? "Unknown"}",
+          "Date: ${artwork.dateDisplay}",
           style: const TextStyle(fontSize: 18),
         ),
         const SizedBox(height: 8),
         Text(
-          "Description: ${artwork.mediumDisplay ?? "No Description"}",
+          "Description: ${artwork.mediumDisplay}",
           style: const TextStyle(fontSize: 16),
         ),
         const SizedBox(height: 16),
@@ -325,9 +327,10 @@ class HomePage extends GetResponsiveView<ArtworkController> {
 
   Widget _buildCloseButton() {
     return Positioned(
-      right: 10,
-      top: 10,
-      child: IconButton(
+      right: -0,
+      top: -0,
+      child: IconButton.filled(
+      color: Colors.white,
         onPressed: () {
           Get.back();
         },

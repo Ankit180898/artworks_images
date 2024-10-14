@@ -35,7 +35,7 @@ class ArtworkController extends GetxController {
             'https://api.artic.edu/api/v1/artworks/search?q=$query&page=$page&limit=$limit';
       }
 
-      print("Fetching data from: $url"); // Debug print
+      debugPrint("Fetching data from: $url"); // Debug print
 
       var response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
@@ -51,16 +51,16 @@ class ArtworkController extends GetxController {
         } else {
           artworksList.addAll(newArtworks);
         }
-        print(
-            "Fetched ${newArtworks.length} artworks. Total: ${artworksList.length}"); // Debug print
+        debugPrint(
+            "Fetched ${newArtworks.length} artworks. Total: ${artworksList.length}"); // Debug debugPrint
         _updateFilteredList();
       } else {
-        print(
-            "Failed to load artworks. Status code: ${response.statusCode}"); // Debug print
+        debugPrint(
+            "Failed to load artworks. Status code: ${response.statusCode}"); // Debug debugPrint
         throw Exception('Failed to load artworks');
       }
     } catch (e) {
-      print("Error fetching artworks: $e"); // Debug print
+      debugPrint("Error fetching artworks: $e"); // Debug debugPrint
     } finally {
       isLoading.value = false;
     }
@@ -74,7 +74,7 @@ class ArtworkController extends GetxController {
           int nextPage = pagination.value!.currentPage + 1;
           await fetchArtworks(query: searchQuery.value, page: nextPage);
         } catch (e) {
-          print("Error fetching more artworks: $e"); // Debug print
+          debugPrint("Error fetching more artworks: $e"); // Debug print
         } finally {
           isFetchingMore.value = false;
         }
@@ -110,7 +110,7 @@ class ArtworkController extends GetxController {
           .toLowerCase()
           .contains(searchQuery.value.toLowerCase())));
     }
-    print(
+    debugPrint(
         "Filtered list updated. Count: ${filteredArtworksList.length}"); // Debug print
   }
 
@@ -132,7 +132,7 @@ class ArtworkController extends GetxController {
 
       html.Url.revokeObjectUrl(url);
     } else {
-      print("Download failed, status code: ${res.statusCode}");
+      debugPrint("Download failed, status code: ${res.statusCode}");
     }
   }
 }

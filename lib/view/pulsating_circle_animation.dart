@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class PulsingCircleAnimation extends StatefulWidget {
+  const PulsingCircleAnimation({super.key});
+
   @override
   _PulsingCircleAnimationState createState() => _PulsingCircleAnimationState();
 }
