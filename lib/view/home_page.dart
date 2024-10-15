@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:artworks_images/controller/artwork_controller.dart';
 import 'package:artworks_images/model/artwork_model.dart';
 import 'package:artworks_images/view/responsive.dart';
@@ -8,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class HomePage extends GetResponsiveView<ArtworkController> {
   HomePage({super.key}) {
@@ -163,7 +162,7 @@ class HomePage extends GetResponsiveView<ArtworkController> {
     required bool isDesktop,
     required bool isExtraLarge,
   }) {
-    int crossAxisCount = isMobile ? 4 : (isTablet ? 6 : (isDesktop ? 12 : 12));
+    int crossAxisCount = isMobile ? 4 : (isTablet ? 6 : (isDesktop ? 10 : 10));
     
     return MasonryGridView.builder(
       shrinkWrap: true,
@@ -243,79 +242,70 @@ class HomePage extends GetResponsiveView<ArtworkController> {
   }
 
   void _showArtworkDialog(BuildContext context, Artwork artwork, String imageUrl) {
+    final size = MediaQuery.of(context).size;
+    final isMobile = size.width < 600;
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        bool isMobile = Responsive.isMobile(context);
-        bool isTablet = Responsive.isTablet(context);
-        
         return Dialog(
-          backgroundColor: Colors.transparent,
-          insetPadding: EdgeInsets.symmetric(
-            horizontal: isMobile ? 16 : 40,
-            vertical: isMobile ? 24 : 80,
-          ),
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              maxWidth: isMobile ? double.infinity : 1200,
-              maxHeight: isMobile ? double.infinity : 800,
+              maxWidth: isMobile ? size.width * 0.9 : 600,
+              maxHeight: isMobile ? size.height * 0.6 : size.height * 0.8,
             ),
-            child: Stack(
-              clipBehavior: Clip.none,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Container(
-                  width: double.infinity,
-                  height: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        spreadRadius: 4,
-                        blurRadius: 20,
-                      ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(24),
-                    child: SingleChildScrollView(
-                      child: isMobile || isTablet
-                          ? Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                AspectRatio(
-                                  aspectRatio: 1,
-                                  child: _buildDialogImage(artwork, imageUrl),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: _buildDialogDetails(artwork),
-                                ),
-                              ],
-                            )
-                          : IntrinsicHeight(
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  Expanded(
-                                    flex: 3,
-                                    child: _buildDialogImage(artwork, imageUrl),
-                                  ),
-                                  Expanded(
-                                    flex: 2,
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(24.0),
-                                      child: _buildDialogDetails(artwork),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                      child: AspectRatio(
+                        aspectRatio: 16 / 9,
+                        child: Hero(
+                          tag: 'artwork-${artwork.id}',
+                          child: CachedNetworkImage(
+                            imageUrl: imageUrl,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Container(
+                              color: Colors.grey[300],
+                              child: const Center(child: CircularProgressIndicator()),
                             ),
+                            errorWidget: (context, url, error) => const Text(""),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: IconButton(
+                        icon: const Icon(Icons.close, color: Colors.white),
+                        onPressed: () => Get.back(),
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 8,
+                      right: 8,
+                      child: IconButton(
+                        icon: const Icon(Icons.download, color: Colors.white),
+                        onPressed: () => controller.downloadImageWeb(imageUrl, artwork.imageId),
+                      ),
+                    ),
+                  ],
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: _buildDialogDetails(artwork, isMobile),
                     ),
                   ),
                 ),
-                _buildCloseButton(isMobile: isMobile, isTablet: isTablet),
               ],
             ),
           ),
@@ -324,76 +314,32 @@ class HomePage extends GetResponsiveView<ArtworkController> {
     );
   }
 
-  Widget _buildDialogImage(Artwork artwork, String imageUrl) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        Hero(
-          tag: 'artwork-${artwork.id}',
-          child: Image.network(
-            imageUrl,
-            fit: BoxFit.cover,
-          ),
-        ),
-        Positioned(
-          right: 16,
-          bottom: 16,
-          child: IconButton.filledTonal(
-            style: IconButton.styleFrom(
-              backgroundColor: Colors.grey.withOpacity(0.7),
-            ),
-            onPressed: () {
-              controller.downloadImageWeb(imageUrl, artwork.imageId);
-            },
-            icon: const Icon(
-              Icons.download,
-              color: Colors.white,
-            ),
-            tooltip: "Download Image",
-          ),
-        ),
-      ],
+  Widget _buildDialogDetails(Artwork artwork, bool isMobile) {
+    final titleStyle = GoogleFonts.poppins(
+      fontSize: isMobile ? 16 : 20,
+      fontWeight: FontWeight.bold,
     );
-  }
+    final subtitleStyle = GoogleFonts.dmSans(
+      fontSize: isMobile ? 12 : 16,
+      fontWeight: FontWeight.w500,
+    );
+    final bodyStyle = GoogleFonts.dmSans(
+      fontSize: isMobile ? 12 : 14,
+    );
 
-  Widget _buildDialogDetails(Artwork artwork) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          artwork.title,
-          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          "Artist: ${artwork.artistDisplay}",
-          style: const TextStyle(fontSize: 18),
-        ),
+        Text(artwork.title, style: titleStyle),
         const SizedBox(height: 8),
-        Text(
-          "Date: ${artwork.dateDisplay}",
-          style: const TextStyle(fontSize: 18),
-        ),
+        Text("Artist: ${artwork.artistDisplay}", style: subtitleStyle),
+        const SizedBox(height: 4),
+        Text("Date: ${artwork.dateDisplay}", style: subtitleStyle),
         const SizedBox(height: 8),
-        Text(
-          "Description: ${artwork.mediumDisplay}",
-          style: const TextStyle(fontSize: 16),
-        ),
+        Text("Description:", style: subtitleStyle),
+        const SizedBox(height: 4),
+        Text(artwork.mediumDisplay, style: bodyStyle),
       ],
-    );
-  }
-
-  Widget _buildCloseButton({required bool isMobile, required bool isTablet}) {
-    return Positioned(
-      right: isMobile || isTablet ? 8 : -16,
-      top: isMobile || isTablet ? 8 : -16,
-      child: CircleAvatar(
-        backgroundColor: Colors.white,
-        child: IconButton(
-          icon: const Icon(Icons.close, color: Colors.black),
-          onPressed: () => Get.back(),
-        ),
-      ),
     );
   }
 }
