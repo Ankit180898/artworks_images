@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:artworks_images/controller/artwork_controller.dart';
 import 'package:artworks_images/model/artwork_model.dart';
+import 'package:artworks_images/view/responsive.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
@@ -32,58 +33,76 @@ class HomePage extends GetResponsiveView<ArtworkController> {
   }
 
   @override
-  Widget desktop() {
+  Widget? builder() {
     return Scaffold(
       backgroundColor: const Color.fromRGBO(237, 233, 230, 0.9),
-      body: Obx(() => _buildBody()),
+      body: Responsive(
+        mobile: _buildBody(isMobile: true),
+        tablet: _buildBody(isTablet: true),
+        desktop: _buildBody(isDesktop: true),
+        extraLargeScreen: _buildBody(isExtraLarge: true),
+      ),
     );
   }
 
-  @override
-  Widget tablet() {
-    return Scaffold(
-      backgroundColor: const Color.fromRGBO(237, 233, 230, 0.9),
-      body: Obx(() => _buildBody()),
-    );
-  }
-
-  // Implement tablet() and mobile() methods similarly if needed
-
-  Widget _buildBody() {
+  Widget _buildBody({
+    bool isMobile = false,
+    bool isTablet = false,
+    bool isDesktop = false,
+    bool isExtraLarge = false,
+  }) {
     return Stack(
       children: [
-        _buildMainContent(),
+        _buildMainContent(
+          isMobile: isMobile,
+          isTablet: isTablet,
+          isDesktop: isDesktop,
+          isExtraLarge: isExtraLarge,
+        ),
         _buildSearchBar(),
         if (controller.isFetchingMore.value) _buildLoadingIndicator(),
       ],
     );
   }
 
-  Widget _buildMainContent() {
-    if (controller.isLoading.value && controller.filteredArtworksList.isEmpty) {
-      return Center(
-          child: LottieBuilder.asset("assets/loading_animation.json"));
-    } else if (controller.filteredArtworksList.isEmpty) {
-      return const Center(child: Text("No artworks found"));
-    } else {
-      return InteractiveViewer(
-        interactionEndFrictionCoefficient: 100,
-        alignment: Alignment.center,
-        constrained: false,
-        maxScale: 1.0,
-        minScale: 0.5,
-        boundaryMargin: EdgeInsets.zero,
-        transformationController: TransformationController(),
-        child: SingleChildScrollView(
-          physics: const ClampingScrollPhysics(),
-          child: SizedBox(
-            width: MediaQuery.of(Get.context!).size.width * 2.5,
-            height: MediaQuery.of(Get.context!).size.height,
-            child: _buildMasonryGridView(),
-          ),
-        ),
-      );
-    }
+  Widget _buildMainContent({
+    required bool isMobile,
+    required bool isTablet,
+    required bool isDesktop,
+    required bool isExtraLarge,
+  }) {
+    return Obx(() {
+      if (controller.isLoading.value && controller.filteredArtworksList.isEmpty) {
+        return Center(child: LottieBuilder.asset("assets/loading_animation.json"));
+      } else if (controller.filteredArtworksList.isEmpty) {
+        return const Center(child: Text("No artworks found"));
+      } else {
+       
+          return InteractiveViewer(
+            interactionEndFrictionCoefficient: 100,
+            alignment: Alignment.center,
+            constrained: false,
+            maxScale: 1.0,
+            minScale: 0.5,
+            boundaryMargin: EdgeInsets.zero,
+            transformationController: TransformationController(),
+            child: SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              child: SizedBox(
+                width: MediaQuery.of(Get.context!).size.width * 2.0,
+                height: MediaQuery.of(Get.context!).size.height,
+                child: _buildMasonryGridView(
+                  isMobile: isMobile,
+                  isTablet: isTablet,
+                  isDesktop: isDesktop,
+                  isExtraLarge: isExtraLarge,
+                ),
+              ),
+            ),
+          );
+        }
+    
+    });
   }
 
   Widget _buildSearchBar() {
@@ -138,29 +157,34 @@ class HomePage extends GetResponsiveView<ArtworkController> {
     );
   }
 
-  Widget _buildMasonryGridView() {
-    return Obx(() => MasonryGridView.builder(
-          shrinkWrap: true,
-          physics: const ClampingScrollPhysics(),
-          controller: scrollController,
-          cacheExtent: 2000,
-          mainAxisSpacing: 30,
-          crossAxisSpacing: 30,
-          gridDelegate: const SliverSimpleGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount:
-                12, // Adjust according to your layout (4 columns in this case)
-          ),
-          itemCount: controller.filteredArtworksList.length,
-          itemBuilder: (context, index) {
-            Artwork artwork = controller.filteredArtworksList[index];
-            String imageUrl =
-                'https://www.artic.edu/iiif/2/${artwork.imageId}/full/843,/0/default.jpg';
-            return _buildGridItem(artwork, imageUrl);
-          },
-        ));
+  Widget _buildMasonryGridView({
+    required bool isMobile,
+    required bool isTablet,
+    required bool isDesktop,
+    required bool isExtraLarge,
+  }) {
+    int crossAxisCount = isMobile ? 4 : (isTablet ? 6 : (isDesktop ? 12 : 12));
+    
+    return MasonryGridView.builder(
+      shrinkWrap: true,
+      physics: const ClampingScrollPhysics(),
+      controller: scrollController,
+      cacheExtent: 5000,
+      mainAxisSpacing: isMobile ? 10 : 30,
+      crossAxisSpacing: isMobile ? 10 : 30,
+      gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+      ),
+      itemCount: controller.filteredArtworksList.length,
+      itemBuilder: (context, index) {
+        Artwork artwork = controller.filteredArtworksList[index];
+        String imageUrl = 'https://www.artic.edu/iiif/2/${artwork.imageId}/full/843,/0/default.jpg';
+        return _buildGridItem(artwork, imageUrl, isMobile: isMobile);
+      },
+    );
   }
 
-  Widget _buildGridItem(Artwork artwork, String imageUrl) {
+  Widget _buildGridItem(Artwork artwork, String imageUrl, {bool isMobile = false}) {
     return Obx(() {
       bool isHovered = hoveredItems[artwork.id] ?? false;
       return MouseRegion(
@@ -193,7 +217,7 @@ class HomePage extends GetResponsiveView<ArtworkController> {
                 ),
               ),
             ),
-            if (isHovered)
+            if (isHovered && !isMobile)
               Positioned(
                 right: 10,
                 bottom: 10,
@@ -218,50 +242,82 @@ class HomePage extends GetResponsiveView<ArtworkController> {
     });
   }
 
-  void _showArtworkDialog(
-      BuildContext context, Artwork artwork, String imageUrl) {
+  void _showArtworkDialog(BuildContext context, Artwork artwork, String imageUrl) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
+        bool isMobile = Responsive.isMobile(context);
+        bool isTablet = Responsive.isTablet(context);
+        
         return Dialog(
           backgroundColor: Colors.transparent,
-          child: Stack(
-            clipBehavior: Clip.antiAlias,
-            children: [
-              Container(
-                width: MediaQuery.of(context).size.width * 0.70,
-                height: MediaQuery.of(context).size.width * 0.35,
-                padding: const EdgeInsets.all(16.0),
-                margin: const EdgeInsets.all(32.0),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.2),
-                    width: 1.5,
+          insetPadding: EdgeInsets.symmetric(
+            horizontal: isMobile ? 16 : 40,
+            vertical: isMobile ? 24 : 80,
+          ),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: isMobile ? double.infinity : 1200,
+              maxHeight: isMobile ? double.infinity : 800,
+            ),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: double.infinity,
+                  height: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        spreadRadius: 4,
+                        blurRadius: 20,
+                      ),
+                    ],
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
-                      spreadRadius: 4,
-                      blurRadius: 20,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: SingleChildScrollView(
+                      child: isMobile || isTablet
+                          ? Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                AspectRatio(
+                                  aspectRatio: 1,
+                                  child: _buildDialogImage(artwork, imageUrl),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: _buildDialogDetails(artwork),
+                                ),
+                              ],
+                            )
+                          : IntrinsicHeight(
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Expanded(
+                                    flex: 3,
+                                    child: _buildDialogImage(artwork, imageUrl),
+                                  ),
+                                  Expanded(
+                                    flex: 2,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(24.0),
+                                      child: _buildDialogDetails(artwork),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                     ),
-                  ],
+                  ),
                 ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _buildDialogImage(artwork, imageUrl),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildDialogDetails(artwork),
-                    ),
-                  ],
-                ),
-              ),
-              _buildCloseButton(),
-            ],
+                _buildCloseButton(isMobile: isMobile, isTablet: isTablet),
+              ],
+            ),
           ),
         );
       },
@@ -270,25 +326,21 @@ class HomePage extends GetResponsiveView<ArtworkController> {
 
   Widget _buildDialogImage(Artwork artwork, String imageUrl) {
     return Stack(
+      fit: StackFit.expand,
       children: [
         Hero(
           tag: 'artwork-${artwork.id}',
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16.0),
-            child: Image.network(
-              imageUrl,
-              height: double.infinity,
-              width: double.infinity,
-              fit: BoxFit.cover,
-            ),
+          child: Image.network(
+            imageUrl,
+            fit: BoxFit.cover,
           ),
         ),
         Positioned(
-          right: 10,
-          bottom: 10,
+          right: 16,
+          bottom: 16,
           child: IconButton.filledTonal(
             style: IconButton.styleFrom(
-              backgroundColor: Colors.grey,
+              backgroundColor: Colors.grey.withOpacity(0.7),
             ),
             onPressed: () {
               controller.downloadImageWeb(imageUrl, artwork.imageId);
@@ -312,7 +364,7 @@ class HomePage extends GetResponsiveView<ArtworkController> {
           artwork.title,
           style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 16),
         Text(
           "Artist: ${artwork.artistDisplay}",
           style: const TextStyle(fontSize: 18),
@@ -327,24 +379,20 @@ class HomePage extends GetResponsiveView<ArtworkController> {
           "Description: ${artwork.mediumDisplay}",
           style: const TextStyle(fontSize: 16),
         ),
-        const SizedBox(height: 16),
       ],
     );
   }
 
-  Widget _buildCloseButton() {
+  Widget _buildCloseButton({required bool isMobile, required bool isTablet}) {
     return Positioned(
-      right: -0,
-      top: -0,
-      child: IconButton.filledTonal(
-        color: Colors.white,
-        style: IconButton.styleFrom(
-          backgroundColor: Colors.grey,
+      right: isMobile || isTablet ? 8 : -16,
+      top: isMobile || isTablet ? 8 : -16,
+      child: CircleAvatar(
+        backgroundColor: Colors.white,
+        child: IconButton(
+          icon: const Icon(Icons.close, color: Colors.black),
+          onPressed: () => Get.back(),
         ),
-        onPressed: () {
-          Get.back();
-        },
-        icon: const Icon(Icons.close),
       ),
     );
   }
