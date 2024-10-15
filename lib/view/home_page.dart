@@ -22,7 +22,10 @@ class HomePage extends GetResponsiveView<ArtworkController> {
           scrollController.position.atEdge &&
           scrollController.position.pixels != 0) {
         Future.delayed(const Duration(milliseconds: 200), () {
-          controller.fetchMoreArtworks();
+          if (scrollController.position.pixels ==
+              scrollController.position.maxScrollExtent) {
+            controller.fetchMoreArtworks();
+          }
         });
       }
     });
@@ -35,10 +38,9 @@ class HomePage extends GetResponsiveView<ArtworkController> {
       body: Obx(() => _buildBody()),
     );
   }
- 
 
-     @override
-       Widget tablet() {
+  @override
+  Widget tablet() {
     return Scaffold(
       backgroundColor: const Color.fromRGBO(237, 233, 230, 0.9),
       body: Obx(() => _buildBody()),
@@ -59,13 +61,16 @@ class HomePage extends GetResponsiveView<ArtworkController> {
 
   Widget _buildMainContent() {
     if (controller.isLoading.value && controller.filteredArtworksList.isEmpty) {
-      return Center(child: LottieBuilder.asset("assets/loading_animation.json"));
+      return Center(
+          child: LottieBuilder.asset("assets/loading_animation.json"));
     } else if (controller.filteredArtworksList.isEmpty) {
       return const Center(child: Text("No artworks found"));
     } else {
       return InteractiveViewer(
+        interactionEndFrictionCoefficient: 100,
+        alignment: Alignment.center,
         constrained: false,
-        maxScale: 2.0,
+        maxScale: 1.0,
         minScale: 0.5,
         boundaryMargin: EdgeInsets.zero,
         transformationController: TransformationController(),
@@ -101,12 +106,10 @@ class HomePage extends GetResponsiveView<ArtworkController> {
         ),
         child: TextField(
           decoration: InputDecoration(
-
             fillColor: Colors.white,
             filled: true,
             contentPadding: const EdgeInsets.symmetric(horizontal: 16),
             hintText: 'Search Artworks',
-
             suffixIcon: const Icon(Icons.search),
             border: OutlineInputBorder(
               borderSide: BorderSide.none,
@@ -122,33 +125,39 @@ class HomePage extends GetResponsiveView<ArtworkController> {
   }
 
   Widget _buildLoadingIndicator() {
-    return  Align(
+    return Align(
       alignment: Alignment.bottomCenter,
       child: Padding(
         padding: const EdgeInsets.all(8.0),
-        child: LottieBuilder.asset("assets/loading_animation.json",width: 50,height: 50,),
+        child: LottieBuilder.asset(
+          "assets/loading_animation.json",
+          width: 50,
+          height: 50,
+        ),
       ),
     );
   }
 
   Widget _buildMasonryGridView() {
     return Obx(() => MasonryGridView.builder(
-      shrinkWrap: true,
-      physics: const ClampingScrollPhysics(),
-      controller: scrollController,
-      cacheExtent: 2000,
-      mainAxisSpacing: 30,
-      crossAxisSpacing: 30,
-      gridDelegate: const SliverSimpleGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 12,
-      ),
-      itemCount: controller.filteredArtworksList.length,
-      itemBuilder: (context, index) {
-        Artwork artwork = controller.filteredArtworksList[index];
-        String imageUrl = 'https://www.artic.edu/iiif/2/${artwork.imageId}/full/843,/0/default.jpg';
-        return _buildGridItem(artwork, imageUrl);
-      },
-    ));
+          shrinkWrap: true,
+          physics: const ClampingScrollPhysics(),
+          controller: scrollController,
+          cacheExtent: 2000,
+          mainAxisSpacing: 30,
+          crossAxisSpacing: 30,
+          gridDelegate: const SliverSimpleGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount:
+                12, // Adjust according to your layout (4 columns in this case)
+          ),
+          itemCount: controller.filteredArtworksList.length,
+          itemBuilder: (context, index) {
+            Artwork artwork = controller.filteredArtworksList[index];
+            String imageUrl =
+                'https://www.artic.edu/iiif/2/${artwork.imageId}/full/843,/0/default.jpg';
+            return _buildGridItem(artwork, imageUrl);
+          },
+        ));
   }
 
   Widget _buildGridItem(Artwork artwork, String imageUrl) {
@@ -167,18 +176,15 @@ class HomePage extends GetResponsiveView<ArtworkController> {
                   color: Colors.white,
                   child: artwork.imageId.isNotEmpty
                       ? CachedNetworkImage(
-                          key: ValueKey(imageUrl),
-                          cacheKey: imageUrl,
-                          useOldImageOnUrlChange: true,
-                          imageUrl: imageUrl,
-                          placeholder: (context, url) => Center(
-                              child: Image.asset(
-                            "assets/loading.gif",
-                            color: Colors.white,
-                          )),
-                          errorWidget: (context, url, error) {
-                            return const Text("");
-                          },
+                          key: ValueKey(
+                              artwork.id), // Use artwork ID or a unique key
+                          imageUrl: imageUrl, // Full-sized image
+                          placeholder: (context, url) => CachedNetworkImage(
+                            imageUrl:
+                                'https://www.artic.edu/iiif/2/${artwork.imageId}/full/!200,200/0/default.jpg', // Thumbnail
+                            fit: BoxFit.cover,
+                          ),
+                          errorWidget: (context, url, error) => const Text(""),
                           fit: BoxFit.cover,
                         )
                       : Container(
@@ -212,14 +218,15 @@ class HomePage extends GetResponsiveView<ArtworkController> {
     });
   }
 
-  void _showArtworkDialog(BuildContext context, Artwork artwork, String imageUrl) {
+  void _showArtworkDialog(
+      BuildContext context, Artwork artwork, String imageUrl) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return Dialog(
           backgroundColor: Colors.transparent,
           child: Stack(
-          clipBehavior: Clip.antiAlias,
+            clipBehavior: Clip.antiAlias,
             children: [
               Container(
                 width: MediaQuery.of(context).size.width * 0.70,
@@ -302,7 +309,7 @@ class HomePage extends GetResponsiveView<ArtworkController> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          artwork.title ?? "No Title",
+          artwork.title,
           style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
@@ -329,8 +336,11 @@ class HomePage extends GetResponsiveView<ArtworkController> {
     return Positioned(
       right: -0,
       top: -0,
-      child: IconButton.filled(
-      color: Colors.white,
+      child: IconButton.filledTonal(
+        color: Colors.white,
+        style: IconButton.styleFrom(
+          backgroundColor: Colors.grey,
+        ),
         onPressed: () {
           Get.back();
         },
