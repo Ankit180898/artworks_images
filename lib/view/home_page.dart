@@ -162,7 +162,7 @@ class HomePage extends GetResponsiveView<ArtworkController> {
     required bool isDesktop,
     required bool isExtraLarge,
   }) {
-    int crossAxisCount = isMobile ? 4 : (isTablet ? 6 : (isDesktop ? 10 : 10));
+    int crossAxisCount = isMobile ? 4 : (isTablet ? 6 : (isDesktop ? 10 : 12));
     
     return MasonryGridView.builder(
       shrinkWrap: true,
@@ -174,6 +174,7 @@ class HomePage extends GetResponsiveView<ArtworkController> {
       gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: crossAxisCount,
       ),
+      
       itemCount: controller.filteredArtworksList.length,
       itemBuilder: (context, index) {
         Artwork artwork = controller.filteredArtworksList[index];
@@ -265,7 +266,7 @@ class HomePage extends GetResponsiveView<ArtworkController> {
                     ClipRRect(
                       borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                       child: AspectRatio(
-                        aspectRatio: 16 / 9,
+                        aspectRatio: 15/9,
                         child: Hero(
                           tag: 'artwork-${artwork.id}',
                           child: CachedNetworkImage(
@@ -281,8 +282,8 @@ class HomePage extends GetResponsiveView<ArtworkController> {
                       ),
                     ),
                     Positioned(
-                      top: 8,
-                      right: 8,
+                      top: 5,
+                      right: 5,
                       child: IconButton(
                         icon: const Icon(Icons.close, color: Colors.white),
                         onPressed: () => Get.back(),
@@ -299,6 +300,7 @@ class HomePage extends GetResponsiveView<ArtworkController> {
                   ],
                 ),
                 Expanded(
+                  flex: 1,
                   child: SingleChildScrollView(
                     child: Padding(
                       padding: const EdgeInsets.all(16),
