@@ -8,12 +8,11 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 
-class HomePage extends StatelessWidget {
-  HomePage({Key? key}) : super(key: key) {
+class HomePage extends GetResponsiveView<ArtworkController> {
+  HomePage({super.key}) {
     _setupScrollController();
   }
 
-  final ArtworkController controller = Get.find<ArtworkController>();
   final ScrollController scrollController = ScrollController();
   final RxMap<int, bool> hoveredItems = <int, bool>{}.obs;
 
@@ -33,7 +32,15 @@ class HomePage extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget desktop() {
+    return Scaffold(
+      backgroundColor: const Color.fromRGBO(237, 233, 230, 0.9),
+      body: Obx(() => _buildBody()),
+    );
+  }
+
+  @override
+  Widget tablet() {
     return Scaffold(
       backgroundColor: const Color.fromRGBO(237, 233, 230, 0.9),
       body: Obx(() => _buildBody()),
