@@ -7,6 +7,7 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:ui';
 
 class HomePage extends GetResponsiveView<ArtworkController> {
   HomePage({super.key}) {
@@ -34,7 +35,7 @@ class HomePage extends GetResponsiveView<ArtworkController> {
   @override
   Widget? builder() {
     return Scaffold(
-      backgroundColor: const Color.fromRGBO(237, 233, 230, 0.9),
+      backgroundColor: const Color(0xff0D0D0D),
       body: Responsive(
         mobile: _buildBody(isMobile: true),
         tablet: _buildBody(isTablet: true),
@@ -71,36 +72,36 @@ class HomePage extends GetResponsiveView<ArtworkController> {
     required bool isExtraLarge,
   }) {
     return Obx(() {
-      if (controller.isLoading.value && controller.filteredArtworksList.isEmpty) {
-        return Center(child: LottieBuilder.asset("assets/loading_animation.json"));
+      if (controller.isLoading.value &&
+          controller.filteredArtworksList.isEmpty) {
+        return Center(
+            child: LottieBuilder.asset("assets/loading_animation.json"));
       } else if (controller.filteredArtworksList.isEmpty) {
-        return const Center(child: Text("No artworks found"));
+        return const Center(child: Text("No artworks found",style: TextStyle(color: Colors.white),));
       } else {
-       
-          return InteractiveViewer(
-            interactionEndFrictionCoefficient: 100,
-            alignment: Alignment.center,
-            constrained: false,
-            maxScale: 1.0,
-            minScale: 0.5,
-            boundaryMargin: EdgeInsets.zero,
-            transformationController: TransformationController(),
-            child: SingleChildScrollView(
-              physics: const ClampingScrollPhysics(),
-              child: SizedBox(
-                width: MediaQuery.of(Get.context!).size.width * 2.0,
-                height: MediaQuery.of(Get.context!).size.height,
-                child: _buildMasonryGridView(
-                  isMobile: isMobile,
-                  isTablet: isTablet,
-                  isDesktop: isDesktop,
-                  isExtraLarge: isExtraLarge,
-                ),
+        return InteractiveViewer(
+          interactionEndFrictionCoefficient: 100,
+          alignment: Alignment.center,
+          constrained: false,
+          maxScale: 1.0,
+          minScale: 0.5,
+          boundaryMargin: EdgeInsets.zero,
+          transformationController: TransformationController(),
+          child: SingleChildScrollView(
+            physics: const ClampingScrollPhysics(),
+            child: SizedBox(
+              width: MediaQuery.of(Get.context!).size.width * 2.0,
+              height: MediaQuery.of(Get.context!).size.height,
+              child: _buildMasonryGridView(
+                isMobile: isMobile,
+                isTablet: isTablet,
+                isDesktop: isDesktop,
+                isExtraLarge: isExtraLarge,
               ),
             ),
-          );
-        }
-    
+          ),
+        );
+      }
     });
   }
 
@@ -163,7 +164,7 @@ class HomePage extends GetResponsiveView<ArtworkController> {
     required bool isExtraLarge,
   }) {
     int crossAxisCount = isMobile ? 4 : (isTablet ? 6 : (isDesktop ? 10 : 12));
-    
+
     return MasonryGridView.builder(
       shrinkWrap: true,
       physics: const ClampingScrollPhysics(),
@@ -174,17 +175,18 @@ class HomePage extends GetResponsiveView<ArtworkController> {
       gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: crossAxisCount,
       ),
-      
       itemCount: controller.filteredArtworksList.length,
       itemBuilder: (context, index) {
         Artwork artwork = controller.filteredArtworksList[index];
-        String imageUrl = 'https://www.artic.edu/iiif/2/${artwork.imageId}/full/843,/0/default.jpg';
+        String imageUrl =
+            'https://www.artic.edu/iiif/2/${artwork.imageId}/full/843,/0/default.jpg';
         return _buildGridItem(artwork, imageUrl, isMobile: isMobile);
       },
     );
   }
 
-  Widget _buildGridItem(Artwork artwork, String imageUrl, {bool isMobile = false}) {
+  Widget _buildGridItem(Artwork artwork, String imageUrl,
+      {bool isMobile = false}) {
     return Obx(() {
       bool isHovered = hoveredItems[artwork.id] ?? false;
       return MouseRegion(
@@ -197,19 +199,28 @@ class HomePage extends GetResponsiveView<ArtworkController> {
               child: Hero(
                 tag: 'artwork-${artwork.id}',
                 child: Container(
-                  color: Colors.white,
                   child: artwork.imageId.isNotEmpty
-                      ? CachedNetworkImage(
-                          key: ValueKey(
-                              artwork.id), // Use artwork ID or a unique key
-                          imageUrl: imageUrl, // Full-sized image
-                          placeholder: (context, url) => CachedNetworkImage(
-                            imageUrl:
-                                'https://www.artic.edu/iiif/2/${artwork.imageId}/full/!200,200/0/default.jpg', // Thumbnail
-                            fit: BoxFit.cover,
+                      ? AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          transform: isHovered 
+                              ? (Matrix4.identity()..scale(1.05))
+                              : Matrix4.identity(),
+                          child: ImageFiltered(
+                            imageFilter: ImageFilter.blur(
+                              sigmaX: isHovered ? 0.5 : 0.0,
+                              sigmaY: isHovered ? 0.5 : 0.0,
+                            ),
+                            child: CachedNetworkImage(
+                              key: ValueKey(artwork.id),
+                              imageUrl: imageUrl,
+                              placeholder: (context, url) => CachedNetworkImage(
+                                imageUrl: 'https://www.artic.edu/iiif/2/${artwork.imageId}/full/!200,200/0/default.jpg',
+                                fit: BoxFit.cover,
+                              ),
+                              errorWidget: (context, url, error) => const Text(""),
+                              fit: BoxFit.cover,
+                            ),
                           ),
-                          errorWidget: (context, url, error) => const Text(""),
-                          fit: BoxFit.cover,
                         )
                       : Container(
                           color: Colors.white,
@@ -242,7 +253,8 @@ class HomePage extends GetResponsiveView<ArtworkController> {
     });
   }
 
-  void _showArtworkDialog(BuildContext context, Artwork artwork, String imageUrl) {
+  void _showArtworkDialog(
+      BuildContext context, Artwork artwork, String imageUrl) {
     final size = MediaQuery.of(context).size;
     final isMobile = size.width < 600;
 
@@ -251,7 +263,8 @@ class HomePage extends GetResponsiveView<ArtworkController> {
       builder: (BuildContext context) {
         return Dialog(
           backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           child: ConstrainedBox(
             constraints: BoxConstraints(
               maxWidth: isMobile ? size.width * 0.9 : 600,
@@ -264,9 +277,10 @@ class HomePage extends GetResponsiveView<ArtworkController> {
                 Stack(
                   children: [
                     ClipRRect(
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(16)),
                       child: AspectRatio(
-                        aspectRatio: 15/9,
+                        aspectRatio: 15 / 9,
                         child: Hero(
                           tag: 'artwork-${artwork.id}',
                           child: CachedNetworkImage(
@@ -274,9 +288,11 @@ class HomePage extends GetResponsiveView<ArtworkController> {
                             fit: BoxFit.cover,
                             placeholder: (context, url) => Container(
                               color: Colors.grey[300],
-                              child: const Center(child: CircularProgressIndicator()),
+                              child: const Center(
+                                  child: CircularProgressIndicator()),
                             ),
-                            errorWidget: (context, url, error) => const Text(""),
+                            errorWidget: (context, url, error) =>
+                                const Text(""),
                           ),
                         ),
                       ),
@@ -294,7 +310,8 @@ class HomePage extends GetResponsiveView<ArtworkController> {
                       right: 8,
                       child: IconButton(
                         icon: const Icon(Icons.download, color: Colors.white),
-                        onPressed: () => controller.downloadImageWeb(imageUrl, artwork.imageId),
+                        onPressed: () => controller.downloadImageWeb(
+                            imageUrl, artwork.imageId),
                       ),
                     ),
                   ],
