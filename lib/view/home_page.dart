@@ -77,7 +77,11 @@ class HomePage extends GetResponsiveView<ArtworkController> {
         return Center(
             child: LottieBuilder.asset("assets/loading_animation.json"));
       } else if (controller.filteredArtworksList.isEmpty) {
-        return const Center(child: Text("No artworks found",style: TextStyle(color: Colors.white),));
+        return const Center(
+            child: Text(
+          "No artworks found",
+          style: TextStyle(color: Colors.white),
+        ));
       } else {
         return InteractiveViewer(
           interactionEndFrictionCoefficient: 100,
@@ -202,7 +206,7 @@ class HomePage extends GetResponsiveView<ArtworkController> {
                   child: artwork.imageId.isNotEmpty
                       ? AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
-                          transform: isHovered 
+                          transform: isHovered
                               ? (Matrix4.identity()..scale(1.05))
                               : Matrix4.identity(),
                           child: ImageFiltered(
@@ -214,10 +218,12 @@ class HomePage extends GetResponsiveView<ArtworkController> {
                               key: ValueKey(artwork.id),
                               imageUrl: imageUrl,
                               placeholder: (context, url) => CachedNetworkImage(
-                                imageUrl: 'https://www.artic.edu/iiif/2/${artwork.imageId}/full/!200,200/0/default.jpg',
+                                imageUrl:
+                                    'https://www.artic.edu/iiif/2/${artwork.imageId}/full/!200,200/0/default.jpg',
                                 fit: BoxFit.cover,
                               ),
-                              errorWidget: (context, url, error) => const Text(""),
+                              errorWidget: (context, url, error) =>
+                                  const Text(""),
                               fit: BoxFit.cover,
                             ),
                           ),

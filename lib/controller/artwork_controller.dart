@@ -125,11 +125,6 @@ class ArtworkController extends GetxController {
     if (res.statusCode == 200) {
       final blob = html.Blob([res.bodyBytes]);
       final url = html.Url.createObjectUrlFromBlob(blob);
-
-      final anchor = html.AnchorElement(href: url)
-        ..setAttribute("download", "$name.jpg")
-        ..click();
-
       html.Url.revokeObjectUrl(url);
     } else {
       debugPrint("Download failed, status code: ${res.statusCode}");
