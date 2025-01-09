@@ -217,13 +217,13 @@ class HomePage extends GetResponsiveView<ArtworkController> {
                             child: CachedNetworkImage(
                               key: ValueKey(artwork.id),
                               imageUrl: imageUrl,
+                              placeholder: (context, url) => CachedNetworkImage(
+                                imageUrl:
+                                    'https://www.artic.edu/iiif/2/${artwork.imageId}/full/!200,200/0/default.jpg',
+                                fit: BoxFit.cover,
+                              ),
                               errorWidget: (context, url, error) =>
                                   const Text(""),
-                              // placeholder: (context, url) => CachedNetworkImage(
-                              //   imageUrl:
-                              //       'https://www.artic.edu/iiif/2/${artwork.imageId}/full/!200,200/0/default.jpg',
-                              //   fit: BoxFit.cover,
-                              // ),
                               fit: BoxFit.cover,
                             ),
                           ),
