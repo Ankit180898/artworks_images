@@ -1,11 +1,14 @@
 import 'dart:async';
+import 'dart:convert';
+// import 'dart:html' as html;
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
+
+import 'package:artworks_images/logger_helper.dart';
 import 'package:artworks_images/model/artwork_model.dart';
 import 'package:artworks_images/model/pagination_model.dart';
-import 'dart:html' as html;
 
 class ArtworkController extends GetxController {
   var artworksList = <Artwork>[].obs;
@@ -34,8 +37,7 @@ class ArtworkController extends GetxController {
         url =
             'https://api.artic.edu/api/v1/artworks/search?q=$query&page=$page&limit=$limit';
       }
-
-      debugPrint("Fetching data from: $url"); // Debug print
+      LoggerHelper.debug("Fetching data from: $url");
 
       var response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
@@ -55,12 +57,13 @@ class ArtworkController extends GetxController {
             "Fetched ${newArtworks.length} artworks. Total: ${artworksList.length}"); // Debug debugPrint
         _updateFilteredList();
       } else {
-        debugPrint(
-            "Failed to load artworks. Status code: ${response.statusCode}"); // Debug debugPrint
+        LoggerHelper.debug(
+            "Failed to load artworks. Status code: ${response.statusCode}");
+        // Debug debugPrint
         throw Exception('Failed to load artworks');
       }
     } catch (e) {
-      debugPrint("Error fetching artworks: $e"); // Debug debugPrint
+      LoggerHelper.debug("Error fetching artworks: $e");
     } finally {
       isLoading.value = false;
     }
@@ -74,7 +77,7 @@ class ArtworkController extends GetxController {
           int nextPage = pagination.value!.currentPage + 1;
           await fetchArtworks(query: searchQuery.value, page: nextPage);
         } catch (e) {
-          debugPrint("Error fetching more artworks: $e"); // Debug print
+          LoggerHelper.debug("Error fetching more artworks: $e");
         } finally {
           isFetchingMore.value = false;
         }
@@ -110,8 +113,9 @@ class ArtworkController extends GetxController {
           .toLowerCase()
           .contains(searchQuery.value.toLowerCase())));
     }
-    debugPrint(
-        "Filtered list updated. Count: ${filteredArtworksList.length}"); // Debug print
+    LoggerHelper.debug(
+        "Filtered list updated. Count: ${filteredArtworksList.length}");
+    // Debug print
   }
 
   @override
@@ -120,14 +124,14 @@ class ArtworkController extends GetxController {
     super.onClose();
   }
 
-  void downloadImageWeb(String url, String name) async {
-    var res = await http.get(Uri.parse(url));
-    if (res.statusCode == 200) {
-      final blob = html.Blob([res.bodyBytes]);
-      final url = html.Url.createObjectUrlFromBlob(blob);
-      html.Url.revokeObjectUrl(url);
-    } else {
-      debugPrint("Download failed, status code: ${res.statusCode}");
-    }
-  }
+  // void downloadImageWeb(String url, String name) async {
+  //   var res = await http.get(Uri.parse(url));
+  //   if (res.statusCode == 200) {
+  //     final blob = html.Blob([res.bodyBytes]);
+  //     final url = html.Url.createObjectUrlFromBlob(blob);
+  //     html.Url.revokeObjectUrl(url);
+  //   } else {
+  //     debugPrint("Download failed, status code: ${res.statusCode}");
+  //   }
+  // }
 }
